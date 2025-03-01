@@ -1,8 +1,11 @@
+#include <signal.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <unistd.h>
+#include "pid_set.h"
 
 #define INPUT_LENGTH 2048
 #define MAX_ARGS 512
@@ -68,6 +71,8 @@ static void free_command_line(struct command_line *line) {
 // Code adapted from sample parser
 int main() {
     struct command_line *curr_command = NULL;
+    pid_set active_child_processes;
+    init_pid_set(&active_child_processes, 8);
 
     while (true) {
         curr_command = parse_input();
@@ -77,7 +82,10 @@ int main() {
 
         // `exit` command
         if (!strcmp(curr_command->argv[0], "exit")) {
-            //TODO: Kill child processes (store all running child processes in a list)
+            for (size_t i = 0; i < active_child_processes.size; i++) {
+                kill(active_child_processes.array[i], SIGTERM);
+            }
+            
             exit(0);
         }
 

@@ -1,11 +1,4 @@
-#include <sys/types.h>
-#include <stdlib.h>
-
-typedef struct {
-    pid_t *array;
-    size_t capacity;
-    size_t size;
-} pid_set;
+#include "pid_set.h"
 
 int init_pid_set(pid_set *set, size_t initial_capacity) {
     set->array = malloc(initial_capacity * sizeof(pid_t));
