@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #define INPUT_LENGTH 2048
 #define MAX_ARGS 512
@@ -67,8 +68,19 @@ static void free_command_line(struct command_line *line) {
 // Code adapted from sample parser
 int main() {
     struct command_line *curr_command = NULL;
+
     while (true) {
-        //TODO: Remove
+        curr_command = parse_input();
+
+        // Ignore comment lines and blank lines
+        if (curr_command->argc == 0 || curr_command->argv[0][0] == '#') continue;
+
+        // `exit` command
+        if (!strcmp(curr_command->argv[0], "exit")) {
+            //TODO: Kill child processes (store all running child processes in a list)
+            exit(0);
+        }
+
         if (curr_command != NULL) {
             printf("ARGS (%i):\n", curr_command->argc);
             for (size_t i = 0; i < curr_command->argc; i++) {
@@ -79,8 +91,8 @@ int main() {
             printf("BG: %i\n", curr_command->is_bg);
             free_command_line(curr_command);
         }
-        curr_command = parse_input();
     }
-    free(curr_command);
+
+    free_command_line(curr_command);
     return EXIT_SUCCESS;
 }
