@@ -36,7 +36,7 @@ struct command_line *parse_input() {
     // Tokenize the input
     char *token = strtok(input, " \n");
     while (token) {
-        // Reinterpret background token as normal text if it is not the final word
+        // Background token is not the final word -> reinterpret it as normal text
         if (curr_command->is_bg) {
             curr_command->is_bg = false;
             // Reinterpret "&" as an arg
