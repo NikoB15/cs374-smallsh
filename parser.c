@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include "pid_set.h"
 
@@ -72,9 +73,15 @@ static void free_command_line(struct command_line *line) {
 int main() {
     struct command_line *curr_command = NULL;
     pid_set active_child_processes;
+    int foreground_status = 0;
     init_pid_set(&active_child_processes, 8);
 
     while (true) {
+        // DEBUG
+        char cwd[1024];
+        printf("CWD: %s", getcwd(cwd, sizeof(cwd)));
+
+        // Wait for user input
         curr_command = parse_input();
 
         // Ignore comment lines and blank lines
@@ -85,18 +92,39 @@ int main() {
             for (size_t i = 0; i < active_child_processes.size; i++) {
                 kill(active_child_processes.array[i], SIGTERM);
             }
-            
             exit(0);
         }
 
+        // `cd` command
+        if (!strcmp(curr_command->argv[0], "cd")) {
+            if (curr_command->argc == 1) {
+                chdir(getenv("HOME"));
+            } else {
+                chdir(curr_command->argv[1]);
+            }
+        }
+
+        // `status` command
+        if (!strcmp(curr_command->argv[0], "status")) {
+            if (WIFEXITED(foreground_status)) {
+                printf("exit value %d\n", WEXITSTATUS(foreground_status));
+            } else {
+                printf("terminated by signal %d\n", WTERMSIG(foreground_status));
+            }
+        }
+
+        // DEBUG
         if (curr_command != NULL) {
+            printf("=============\n");
             printf("ARGS (%i):\n", curr_command->argc);
             for (size_t i = 0; i < curr_command->argc; i++) {
-                printf(" > %s\n", curr_command->argv[i]);
+                printf(" %s", curr_command->argv[i]);
             }
-            printf("IN: %s\n", curr_command->input_file);
-            printf("OUT: %s\n", curr_command->output_file);
+            printf("\nIN: %s, ", curr_command->input_file);
+            printf("OUT: %s, ", curr_command->output_file);
             printf("BG: %i\n", curr_command->is_bg);
+            printf("=============\n");
+
             free_command_line(curr_command);
         }
     }
