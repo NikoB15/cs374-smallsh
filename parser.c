@@ -14,13 +14,6 @@ struct command_line {
     bool is_bg;
 };
 
-static void reset_redirection(struct command_line *line) {
-    if (line->input_file != NULL) free(line->input_file);
-    if (line->output_file != NULL) free(line->output_file);
-    line->input_file = NULL;
-    line->output_file = NULL;
-}
-
 // Code adapted from sample parser
 struct command_line *parse_input() {
     char input[INPUT_LENGTH];
@@ -40,20 +33,18 @@ struct command_line *parse_input() {
         if (curr_command->is_bg) {
             curr_command->is_bg = false;
             // Reinterpret "&" as an arg
-            // Ignore redirection that doesn't come after all args
-            reset_redirection(curr_command);
             curr_command->argv[curr_command->argc++] = strdup("&");
         }
 
         if (!strcmp(token,"<")) {
+            // We assume the redirection operator is followed by another word
             curr_command->input_file = strdup(strtok(NULL," \n"));
         } else if (!strcmp(token,">")) {
+            // We assume the redirection operator is followed by another word
             curr_command->output_file = strdup(strtok(NULL," \n"));
         } else if (!strcmp(token,"&")) {
             curr_command->is_bg = true;
         } else {
-            // Ignore redirection that doesn't come after all args
-            reset_redirection(curr_command);
             curr_command->argv[curr_command->argc++] = strdup(token);
         }
         token = strtok(NULL," \n");
@@ -79,7 +70,7 @@ int main() {
     while (true) {
         //TODO: Remove
         if (curr_command != NULL) {
-            printf("ARGS:\n");
+            printf("ARGS (%i):\n", curr_command->argc);
             for (size_t i = 0; i < curr_command->argc; i++) {
                 printf(" > %s\n", curr_command->argv[i]);
             }
