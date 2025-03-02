@@ -83,14 +83,14 @@ static void print_status_1(int status) {
 }
 
 static void toggle_foreground_mode(int signo) {
-    char *on_msg = "Entering foreground-only mode (& is now ignored)\n";
-    char *off_msg = "Exiting foreground-only mode\n";
+    char *on_msg = "\nEntering foreground-only mode (& is now ignored)\n";
+    char *off_msg = "\nExiting foreground-only mode\n";
 
     is_foreground_only = !is_foreground_only;
     if (is_foreground_only) {
-        write(STDOUT_FILENO, on_msg, 50);
+        write(STDOUT_FILENO, on_msg, 51);
     } else {
-        write(STDOUT_FILENO, off_msg, 30);
+        write(STDOUT_FILENO, off_msg, 31);
     }
 }
 
@@ -196,6 +196,7 @@ int main() {
     pid_set active_child_processes;
     init_pid_set(&active_child_processes, 8);
     int foreground_status = 0;
+    bool prev_foreground_mode = false;
 
     // Ignore ^C
     sig_ignore(SIGINT);
@@ -214,11 +215,12 @@ int main() {
         print_finished_background_processes(&active_child_processes);
 
         // Wait for user input
-        sigset_t block_set, old_set;
-        sigaddset(&block_set, SIGTSTP);
-        sigprocmask(SIG_BLOCK, &block_set, &old_set);
         line = parse_input();
-        sigprocmask(SIG_SETMASK, &old_set, NULL);
+
+        if (prev_foreground_mode != is_foreground_only) {
+            prev_foreground_mode = is_foreground_only;
+            continue;
+        }
 
         // Ignore comment lines and blank lines
         if (line->argc == 0 || line->argv[0][0] == '#') continue;
